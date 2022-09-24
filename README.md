@@ -3,3 +3,9 @@ Env on the fly
 
 2)@Module({
   imports: [ConfigModule.forRoot()]
+
+
+3)is like nodemon
+  npm run start:dev
+
+4)npm install nest-web3

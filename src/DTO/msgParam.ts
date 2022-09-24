@@ -1,15 +1,19 @@
+import { ConfigService } from "@nestjs/config";
+
 export class MsgParam {
     constructor(){}
+    private configService: ConfigService = new ConfigService();
+
     getMsgParam(nonce: string): any {
         const msgParams = {
             domain: {
-                chainId: environment.chainId,
+                chainId:this.configService.get<string>('chainId'),
                 name: 'Qatar Prode 2022',
                 verifyingContract: '0x8DD130Cd016d322555f96C10861ed4d79A916337',
                 version: '1',
             },
             message: {
-                Firma: `Por Favor Firma Digitalmente para iniciar Sesion en Qatar Prode 2022, nonce:${nonce}`
+                Firma: `Por Favor Firma Digitalmente para iniciar Sesion en Qatar Prode 2022`
 
             },
             primaryType: 'Prode',
