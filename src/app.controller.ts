@@ -1,22 +1,21 @@
-import { Body, Controller, Get, Post, Inject, CACHE_MANAGER, Param} from '@nestjs/common';
+import { Body, Controller, Get, Post, Inject, CACHE_MANAGER, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Sign } from './DTO/sign';
-import {recoverTypedSignature as recoverTypedSignatureV4, SignTypedDataVersion,
+import {
+  recoverTypedSignature as recoverTypedSignatureV4, SignTypedDataVersion,
 } from '@metamask/eth-sig-util';
 import { Web3Service } from "nest-web3";
 
-import {MsgParam} from 'src/DTO/msgParam'
-import {Cache} from 'cache-manager';
+import { MsgParam } from 'src/DTO/msgParam'
+import { Cache } from 'cache-manager';
 import { ConfigService } from "@nestjs/config";
 @Controller('sign')
 export class AppController {
-  web3Provider:any
-  web3:any
-  constructor(private readonly appService: AppService,@Inject(CACHE_MANAGER) private cacheManager: Cache,
-  private configService: ConfigService,private readonly web3Service: Web3Service) {
-    //this.web3 = new Web3(new Web3.providers.HttpProvider('https://soft-tiniest-frog.matic-testnet.discover.quiknode.pro/dc72e305646d4ac8cf9349c19851b327d972b8ac/'));
-    //this.web3Provider = new Web3.providers.HttpProvider(this.configService.get<string>('provider'));
-    //this.web3 = new Web3(this.web3Provider);
+  web3Provider: any
+  web3: any
+  constructor(private readonly appService: AppService, @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private configService: ConfigService, private readonly web3Service: Web3Service) {
+
   }
 
   @Get()
@@ -26,36 +25,65 @@ export class AppController {
     //return this.appService.getHello();
   }
 
-   @Get(':address')
-   async getNonce(@Param('address') _address: string): Promise<any>{
+  @Get(':address')
+  async getNonce(@Param('address') _address: string): Promise<any> {
     let rndNumber = Math.floor(Math.random() * 100000);
-   
-    console.log(_address); 
+
+
     try {
       const client = this.web3Service.getClient('eth');
       const address = await client.utils.toChecksumAddress(_address);//this.web3.utils.toChecksumAddress(_address)
-      await this.cacheManager.set(address, rndNumber, {ttl: 3600} ); //one hour
-      let value = await this.cacheManager.get(address);
+      await this.cacheManager.set(_address.trim(), rndNumber, { ttl: 3600 }); //one hour
+      let value = await this.cacheManager.get(_address);
       console.log(value);
       return rndNumber;
-    } catch(e) { 
-      console.error('invalid ethereum address', e.message) 
+    } catch (e) {
+      console.error('invalid ethereum address', e.message)
       return "error";
-    }  
-    
+    }
+
   }
 
   @Post()
-  validateSign(@Body() _sign: Sign): any{
+  async validateSign(@Body() _sign: Sign): Promise<any> {
 
-     const recoveredAddr = recoverTypedSignatureV4({
-      data: new MsgParam().getMsgParam("343"),
-      signature: '0xddf5be2817a220c350778b23784b2d5eca7f2dd63c07b95f7572756db69d20456c02f68ec27d705f231a2904915d0be26f5d2d94715ca71263da11b8b17975ff1b',
-      version:SignTypedDataVersion.V4  
-  }); 
- /*  let msgParam =new MsgParam().getMsgParam("343");
-    return msgParam;  */
-     return recoveredAddr;
+    try {
+      let value = await this.cacheManager.get(_sign.address.trim());
+      console.log(typeof _sign.address);
+      console.log(_sign.sign);
+      console.log("Value" + value);
+      const client = this.web3Service.getClient('eth');
+
+      const recoveredAddr = recoverTypedSignatureV4({
+        data: new MsgParam().getMsgParam(value.toString()),
+        signature: _sign.sign,
+        version: SignTypedDataVersion.V4
+      });
+      console.log(recoveredAddr);
+      let recoverAdd = await client.utils.toChecksumAddress(recoveredAddr);
+      console.log("Recoverad " + recoverAdd);
+      let address = await client.utils.toChecksumAddress(_sign.address.trim());
+      console.log("Address parameter " + address);
+      if (recoverAdd == address) {
+        //la firma es valida
+        console.log("La firma es valida");
+        //aca viene la creacion del JWT
+        return true;
+      } else {
+        console.log("La firma es invalida")
+        return false;
+      }
+    } catch (Error: any) {
+      console.log("Hubo un erro1r: " + Error);
+      return false;
+    }
+
+
+    //console.log(_sign.address);
+    //console.log(_sign.sign);
+    /*  let msgParam =new MsgParam().getMsgParam("343");
+       return msgParam;  */
+    // return JSON.stringify(recoveredAddr);
   }
 }
 

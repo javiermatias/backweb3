@@ -13,7 +13,7 @@ export class MsgParam {
                 version: '1',
             },
             message: {
-                Firma: `Por Favor Firma Digitalmente para iniciar Sesion en Qatar Prode 2022`
+                Firma: `Por Favor Firma Digitalmente para iniciar Sesion en Qatar Prode 2022. Tu nonce:${nonce}`
 
             },
             primaryType: 'Prode',
