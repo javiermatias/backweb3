@@ -15,7 +15,6 @@ export class AppController {
   web3: any
   constructor(private readonly appService: AppService, @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService, private readonly web3Service: Web3Service) {
-
   }
 
   @Get()
